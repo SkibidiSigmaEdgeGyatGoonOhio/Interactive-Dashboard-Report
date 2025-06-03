@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semiconductor Industry: Interactive Tech Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color-light: #f0f2f5;
+            --text-color-light: #333;
+            --card-bg-light: #ffffff;
+            --header-bg-light: #007bff;
+            --header-text-light: #ffffff;
+            --accent-color-light: #007bff;
+            --border-color-light: #e0e0e0;
+
+            --bg-color-dark: #1a1a2e;
+            --text-color-dark: #e0e0e0;
+            --card-bg-dark: #1f1f3a;
+            --header-bg-dark: #0f3460;
+            --header-text-dark: #e94560;
+            --accent-color-dark: #e94560;
+            --border-color-dark: #2a2a4a;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color-light);
+            color: var(--text-color-light);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body.dark-mode {
+            --bg-color-light: var(--bg-color-dark);
+            --text-color-light: var(--text-color-dark);
+            --card-bg-light: var(--card-bg-dark);
+            --header-bg-light: var(--header-bg-dark);
+            --header-text-light: var(--header-text-dark);
+            --accent-color-light: var(--accent-color-dark);
+            --border-color-light: var(--border-color-dark);
+        }
+        header {
+            background-color: var(--header-bg-light);
+            color: var(--header-text-light);
+            padding: 25px 40px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border-bottom: 3px solid var(--accent-color-light);
+        }
+        header h1 {
+            margin: 0;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.8em;
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px var(--accent-color-light);
+        }
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .theme-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 12px;
+            background-color: var(--card-bg-light);
+            color: var(--text-color-light);
+            border: 1px solid var(--border-color-light);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .theme-switcher:hover {
+            background-color: var(--accent-color-light);
+            color: var(--header-bg-light);
+        }
+         body.dark-mode .theme-switcher:hover {
+            color: var(--card-bg-dark);
+        }
+        .container {
+            padding: 25px;
+            max-width: 1300px;
+            margin: 30px auto;
+        }
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            border-bottom: 2px solid var(--accent-color-light);
+            margin-bottom: 30px;
+        }
+        .tab-button {
+            font-family: 'Orbitron', sans-serif;
+            background-color: transparent;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 15px 25px;
+            transition: 0.3s ease;
+            font-size: 1.1em;
+            color: var(--text-color-light);
+            border-bottom: 3px solid transparent;
+            margin: 0 5px;
+        }
+        .tab-button:hover {
+            color: var(--accent-color-light);
+            border-bottom: 3px solid var(--accent-color-light);
+        }
+        .tab-button.active {
+            color: var(--accent-color-light);
+            font-weight: bold;
+            border-bottom: 3px solid var(--accent-color-light);
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        .chart-card {
+            background-color: var(--card-bg-light);
+            border: 1px solid var(--border-color-light);
+            border-left: 5px solid var(--accent-color-light);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+        .chart-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .chart-card h2 {
+            margin-top: 0;
+            color: var(--accent-color-light);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6em;
+            border-bottom: 1px solid var(--border-color-light);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+         .chart-card h2 .icon { margin-right: 10px; }
+
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+            max-height: 380px;
+        }
+        .info-section {
+            background-color: var(--card-bg-light);
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid var(--border-color-light);
+            border-left: 5px solid #17a2b8;
+             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .info-section h2 {
+            color: #17a2b8;
+        }
+        .info-section p {
+            line-height: 1.7;
+            font-size: 0.95em;
+        }
+        .info-section ul {
+            padding-left: 20px;
+        }
+        .info-section li {
+            margin-bottom: 8px;
+        }
+        .tooltip-trigger {
+            display: inline-block;
+            margin-left: 8px;
+            color: var(--accent-color-light);
+            cursor: help;
+            font-weight: bold;
+            position: relative;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85em;
+            font-family: 'Roboto', sans-serif;
+        }
+        .tooltip-trigger:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        footer {
+            text-align: center;
+            padding: 25px;
+            margin-top: 40px;
+            background-color: var(--header-bg-light);
+            color: var(--header-text-light);
+            font-size: 0.9em;
+        }
+        body.dark-mode footer {
+             background-color: var(--header-bg-dark);
+             color: var(--text-color-dark);
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-switcher" onclick="toggleTheme()">Toggle Theme 🎨</button>
+    <header>
+        <h1>⚡ Semiconductor Pulse ⚡</h1>
+        <p>An Interactive Dashboard of the Chip Universe</p>
+    </header>
+
+    <div class="container">
+        <div class="tab-container">
+            <button class="tab-button active" onclick="openTab(event, 'MarketOverview')">📈 Market Overview</button>
+            <button class="tab-button" onclick="openTab(event, 'CompanyDuel')">🆚 Company Duels</button>
+            <button class="tab-button" onclick="openTab(event, 'ChipInnovators')">💡 Chip Innovators</button>
+        </div>
+
+        <div id="MarketOverview" class="tab-content active">
+            <div class="chart-card">
+                <h2><span class="icon">🌐</span>Global Semiconductor Market Trajectory</h2>
+                <canvas id="globalMarketChart"></canvas>
+                <p style="font-size: 0.8em; text-align: center; opacity: 0.7;">Projections from firms like Fortune Business Insights [1], Precedence Research [2].</p>
+            </div>
+             <div class="info-section chart-card">
+                <h2><span class="icon">🌍</span>The Big Picture</h2>
+                <p>The semiconductor market is on a significant upward trend, driven by AI, IoT, automotive advancements, and consumer electronics. Projections indicate substantial growth, potentially reaching over <strong>$2 Trillion by 2032</strong> (Source: Fortune Business Insights [1]). Different analysts offer varying figures, but the consensus is strong growth. Precedence Research, for instance, sees the market hitting around <strong>$1.2 Trillion by 2034</strong> [2].</p>
+            </div>
+        </div>
+
+        <div id="CompanyDuel" class="tab-content">
+            <div class="grid-container">
+                <div class="chart-card">
+                    <h2><span class="icon">🎮</span>GPU Arena: Nvidia vs AMD (Q4 2024 Est.)</h2>
+                    <canvas id="gpuMarketShareChart"></canvas>
+                     <p style="font-size: 0.8em; text-align: center; opacity: 0.7;">Data reflecting Nvidia's strong lead. JPR reports often cited [e.g., 1, 3 of 2nd search].</p>
+                </div>
+                <div class="chart-card">
+                    <h2><span class="icon">💻</span>CPU Battleground: Intel vs AMD (Recent Est.)</h2>
+                    <canvas id="cpuMarketShareChart"></canvas>
+                    <p style="font-size: 0.8em; text-align: center; opacity: 0.7;">Intel holds significant share, AMD shows strong gains [e.g., 1, 2 of 3rd search].</p>
+                </div>
+                <div class="chart-card">
+                    <h2><span class="icon">📱</span>Mobile SoC Titans (Q3/Q4 2024 Est.)</h2>
+                    <canvas id="mobileMarketShareChart"></canvas>
+                    <p style="font-size: 0.8em; text-align: center; opacity: 0.7;">MediaTek, Qualcomm, Apple dominate different segments [e.g., 1, 3 of 4th search].</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="ChipInnovators" class="tab-content">
+            <div class="grid-container">
+                 <div class="chart-card">
+                    <h2><span class="icon">🍏</span>Apple's Silicon Ascent: Mac Revenue</h2>
+                    <canvas id="macRevenueChart"></canvas>
+                    <p style="font-size: 0.8em; text-align: center; opacity: 0.7;">Illustrative trend; Apple Silicon boosted Mac performance and sales [e.g., 1, 2 of 5th search].</p>
+                </div>
+                <div class="chart-card">
+                    <h2><span class="icon">🧠</span>Google's AI Brains: TPU Market Growth</h2>
+                    <canvas id="tpuMarketChart"></canvas>
+                     <p style="font-size: 0.8em; text-align: center; opacity: 0.7;">Forecasts for specialized AI chips like TPUs. [2 of 6th search]</p>
+                </div>
+            </div>
+             <div class="info-section chart-card">
+                <h2><span class="icon">🌟</span>Spotlight on Innovators</h2>
+                <ul>
+                    <li><strong>Nvidia:</strong> Spearheading the AI revolution with powerful GPUs and the CUDA ecosystem. Its dominance in data centers and AI training is profound. [1, 3 of 2nd search]</li>
+                    <li><strong>AMD:</strong> Fiercely competing in both CPU (Ryzen, EPYC) and GPU (Radeon) markets, consistently gaining mindshare and market share. [1, 2 of 2nd search, 2, 5 of 3rd search]</li>
+                    <li><strong>Intel:</strong> A legacy giant, Intel is navigating a transformative period, investing in foundries (IFS) and next-gen CPUs/GPUs to reclaim leadership. [1, 4 of 3rd search]</li>
+                    <li><strong>Qualcomm:</strong> The king of mobile connectivity (Snapdragon, modems), now aggressively expanding into automotive, IoT, and XR. [1, 3 of 4th search]</li>
+                    <li><strong>Apple:</strong> Its custom silicon (M-series, A-series) showcases the power of vertical integration, delivering exceptional performance and efficiency in its ecosystem. [1, 2, 4 of 5th search]</li>
+                    <li><strong>Google:</strong> Pioneering AI-specific hardware with TPUs, driving its cloud AI services and internal applications. Each generation (e.g., Trillium, TPU v6) pushes boundaries. [1, 3, 4, 5 of 6th search]</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 Semiconductor Indutry</p>
+        <p>Disclaimer: All data is purely made up by me and my group (using some Google searchs)</p>
+    </footer>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tabbuttons;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+                tabcontent[i].classList.remove('active');
+            }
+            tabbuttons = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tabbuttons.length; i++) {
+                tabbuttons[i].className = tabbuttons[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.className += " active";
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelector('.tab-button.active').click();
+            const globalMarketCtx = document.getElementById('globalMarketChart').getContext('2d');
+            new Chart(globalMarketCtx, {
+                type: 'line',
+                data: {
+                    labels: ['2024', '2026', '2028', '2030', '2032', '2034'],
+                    datasets: [{
+                        label: 'Projected Market Size (USD Billions)',
+                        data: [681, 850, 1150, 1600, 2062, 2200],
+                        borderColor: '#00CFE8', 
+                        backgroundColor: 'rgba(0, 207, 232, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#00CFE8',
+                        pointBorderColor: '#fff',
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#00CFE8'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: false, title: { display: true, text: 'USD Billions', font: {size: 14}, color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333' }, grid: { color: 'rgba(128,128,128,0.2)'}, ticks: {color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333'} },
+                        x: { title: { display: true, text: 'Year', font: {size: 14}, color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333' }, grid: { display: false }, ticks: {color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333'} }
+                    },
+                    plugins: { legend: { labels: { color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333' } } }
+                }
+            });
+            const gpuMarketShareCtx = document.getElementById('gpuMarketShareChart').getContext('2d');
+            new Chart(gpuMarketShareCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Nvidia', 'AMD', 'Intel (dGPU)'],
+                    datasets: [{
+                        label: 'GPU Market Share (Q4 2024 Est.)',
+                        data: [82, 17, 1],
+                        backgroundColor: ['#76b900', '#ff4d4d', '#0071c5'], 
+                        borderColor: document.body.classList.contains('dark-mode') ? '#1f1f3a' : '#fff',
+                        hoverOffset: 8
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333' } } } }
+            });
+            const cpuMarketShareCtx = document.getElementById('cpuMarketShareChart').getContext('2d');
+            new Chart(cpuMarketShareCtx, {
+                type: 'polarArea',
+                data: {
+                    labels: ['Intel', 'AMD'],
+                    datasets: [{
+                        label: 'CPU Market Share (Est. Q4 2024/Early 2025)',
+                        data: [65, 35], 
+                        backgroundColor: ['rgba(0, 113, 197, 0.7)', 'rgba(237, 28, 36, 0.7)'],
+                        borderColor: [ '#0071c5', '#ed1c24'],
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false,
+                    scales: { r: { grid: { color: 'rgba(128,128,128,0.2)'}, ticks: { backdropColor: 'transparent', color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333' } } },
+                    plugins: { legend: { position: 'bottom', labels: { color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333' } } }
+                }
+            });
+            const mobileMarketShareCtx = document.getElementById('mobileMarketShareChart').getContext('2d');
+            new Chart(mobileMarketShareCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['MediaTek', 'Qualcomm', 'Apple', 'Samsung Exynos', 'Unisoc', 'Google Tensor'],
+                    datasets: [{
+                        label: 'Smartphone AP/SoC Share (Q3/Q4 2024 Est.)',
+                        data: [35, 25, 17, 8, 10, 5], 
+                        backgroundColor: ['#8A2BE2', '#FF8C00', '#A9A9A9', '#36A2EB', '#FF6384', '#4BC0C0'], 
+                        borderColor: document.body.classList.contains('dark-mode') ? '#1f1f3a' : '#fff',
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                    scales: {
+                        x: { title: { display: true, text: '% Market Share', font: {size: 12}, color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333' }, grid: { color: 'rgba(128,128,128,0.2)'}, ticks: {color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333'} },
+                        y: { grid: { display: false }, ticks: {color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333'} }
+                    },
+                    plugins: { legend: { display: false } } 
+                }
+            });
+            const macRevenueCtx = document.getElementById('macRevenueChart').getContext('2d');
+            new Chart(macRevenueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Q1 \'23', 'Q2 \'23', 'Q3 \'23', 'Q4 \'24', 'Q1 \'25', 'Q2 \'25'],
+                    datasets: [{
+                        label: 'Mac Revenue (Illustrative - Billions USD)',
+                        data: [7.2, 7.0, 7.6, 7.8, 8.99, 7.9],
+                        borderColor: '#C0C0C0', 
+                        backgroundColor: 'rgba(192, 192, 192, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#C0C0C0'
+                    }]
+                },
+                 options: { responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: false, title: { display: true, text: 'USD Billions', font: {size: 14}, color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333' }, grid: { color: 'rgba(128,128,128,0.2)'}, ticks: {color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333'} },
+                        x: { grid: { display: false }, ticks: {color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333'} }
+                    },
+                    plugins: { legend: { labels: { color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333' } } }
+                 }
+            });
+            const tpuMarketCtx = document.getElementById('tpuMarketChart').getContext('2d');
+            new Chart(tpuMarketCtx, {
+                type: 'bar', 
+                data: {
+                    labels: ['2024', '2027', '2030', '2033'],
+                    datasets: [{
+                        label: 'Global TPU Market Size (USD Billions)',
+                        data: [2.6, 7.0, 15.0, 30.4],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.5)',
+                            'rgba(54, 162, 235, 0.5)',
+                            'rgba(255, 206, 86, 0.5)',
+                            'rgba(75, 192, 192, 0.5)'
+                        ],
+                        borderColor: [
+                            'rgb(255, 99, 132)',
+                            'rgb(54, 162, 235)',
+                            'rgb(255, 206, 86)',
+                            'rgb(75, 192, 192)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'USD Billions', font: {size: 14}, color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333' }, grid: { color: 'rgba(128,128,128,0.2)'}, ticks: {color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333'} },
+                        x: { grid: { display: false }, ticks: {color: document.body.classList.contains('dark-mode') ? '#e0e0e0' : '#333'} }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+            window.updateChartColors = function() {
+                const isDarkMode = document.body.classList.contains('dark-mode');
+                const textColor = isDarkMode ? '#e0e0e0' : '#333';
+                const gridColor = isDarkMode ? 'rgba(224, 224, 224, 0.15)' : 'rgba(51, 51, 51, 0.1)';
+                const chartInstances = Chart.instances; 
+                for(const id in chartInstances) {
+                    const chart = chartInstances[id];
+                    if(chart.options.scales?.x?.title) chart.options.scales.x.title.color = textColor;
+                    if(chart.options.scales?.y?.title) chart.options.scales.y.title.color = textColor;
+                    if(chart.options.scales?.x?.ticks) chart.options.scales.x.ticks.color = textColor;
+                    if(chart.options.scales?.y?.ticks) chart.options.scales.y.ticks.color = textColor;
+                    if(chart.options.scales?.r?.ticks) chart.options.scales.r.ticks.color = textColor; 
+                    if(chart.options.scales?.x?.grid) chart.options.scales.x.grid.color = gridColor;
+                    if(chart.options.scales?.y?.grid) chart.options.scales.y.grid.color = gridColor;
+                    if(chart.options.scales?.r?.grid) chart.options.scales.r.grid.color = gridColor; 
+                    if(chart.options.plugins?.legend?.labels) chart.options.plugins.legend.labels.color = textColor;
+                    if (chart.canvas.id === 'gpuMarketShareChart' && chart.data.datasets[0]) {
+                        chart.data.datasets[0].borderColor = isDarkMode ? '#1f1f3a' : '#fff';
+                    }
+                     if (chart.canvas.id === 'mobileMarketShareChart' && chart.data.datasets[0]) {
+                        chart.data.datasets[0].borderColor = isDarkMode ? '#1f1f3a' : '#fff';
+                    }
+
+                    chart.update();
+                }
+            }
+            const oldToggleTheme = toggleTheme;
+            window.toggleTheme = function() {
+                oldToggleTheme(); 
+                updateChartColors(); 
+            }
+            updateChartColors();
+        });
+    </script>
+</body>
+</html>
